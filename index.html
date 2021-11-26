@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+</head>
+<body>
+
+<form action="" method="POST">
+<input type="text" name="name" value="" placeholder="名前"><br>
+<input type="text" name="comment" value="" placeholder="コメント" >
+  <input type="submit" name="submit_add" value="送信"><br>
+  <input type="text" name="deleteNo" value="" placeholder="削除対象番号">
+  <input type="submit" name="submit_del" value="削除">
+</form>
+  
+<?php 
+$delimiter = "<>"; // "\t"; // 
+$fname_sample = "sample.txt";
+
+echo "ファイル入力<br>";
+touch($fname_sample);
+($fhrp_sample = fopen($fname_sample, "r+"))
+ || die("die: fopen r+: {$fname_sample}.");
+flock($fhrp_sample, LOCK_EX); // ファイル排他ロック
+// LOCK_SH : ファイル共有ロック
+// LOCK_EX : ファイル排他ロック
+$sample_summary = [];
+$num = 0;
+$index = 0;
+while ( $line = fgets($fhrp_sample) ) {
+  $line = str_replace(PHP_EOL, '', $line);
+  $sample_summary[] = $line;
+  $a1sCol = explode ($delimiter, $line);
+  $n = intval($a1sCol[0]);
+  $num = max($num,$n);
+  echo "{$sample_summary[$index]}<br>";
+  $index++;
+}
+echo "<br>";
+
+if( isset($_POST['submit_add']) ){
+  echo 'if(isset($_POST[submit_add]))'."<br>";
+  $num++;
+  $line = "{$num}{$delimiter}{$_POST['name']}{$delimiter}{$_POST['comment']}";
+  $sample_summary[] = $line;
+  echo "{$sample_summary[$index]}<br>";
+  echo "<br>";
+}
+
+if( isset($_POST['submit_del']) ){
+  echo 'if(isset($_POST[submit_del]))'."<br>";
+  $nDeleteNo = intval($_POST['deleteNo']);
+  $index = -1;
+  foreach ($sample_summary as $key => $line) {
+     $a1sCol = explode ($delimiter, $line);
+     $num = intval($a1sCol[0]);
+     if($nDeleteNo===$num){
+       $index = $key;
+       echo "index={$index}<br>";
+       echo "{$line}<br>";
+       break;
+     }
+  }
+  if(0<=$index){
+    unset($sample_summary[$index]);
+  }
+  echo "<br>";
+}
+
+if( isset($_POST['submit_add']) || isset($_POST['submit_del']) ){
+  echo "ファイル出力<br>";
+  // fseek($fhrp_sample, 0)
+  rewind($fhrp_sample)
+   || die("die: fseek: {$fname_sample}.");
+  ftruncate($fhrp_sample, 0)
+   || die("die: ftruncate: {$fname_sample}.");
+  foreach ($sample_summary as $key => $line) {
+    echo "{$line}<br>";
+    fwrite($fhrp_sample, $line.PHP_EOL)
+     || die("die: fwrite: {$fname_sample}.");
+  }
+}
+// ファイルclose // ファイル･ロックも開放
+fclose($fhrp_sample)
+ || die("die: fclose: {$fname_sample}.");
+?>
+</body>
+</html>
